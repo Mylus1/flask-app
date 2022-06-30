@@ -1,17 +1,20 @@
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, abort
+import requests
 
 app = Flask(__name__)
 api = Api(app)
+response = requests.get('http://127.0.0.1:5000/TodoList')
+todo_json = response.json()
 
 TODOS = {
-    'todo1': {'task': 'build an API'},
-    'todo2': {'task': '?????'},
-    'todo3': {'task': 'profit!'},
+    'todo1': {'task': 'Build an API'},
+    'todo2': {'task': 'Become Head Ninja'},
+    'todo3': {'task': 'Retire'},
 }
 def abort_if_todo_doesnt_exist(todo_id):
     if todo_id not in TODOS:
-        abort(404, message="Todo {} doesn't exist".format(todo_id))
+        abort(404, message=f"Todo {todo_id} doesn't exist")
         
 parser = reqparse.RequestParser()
 parser.add_argument('task')
@@ -39,16 +42,20 @@ class TodoList(Resource):
     def post(self):
         args = parser.parse_args()
         todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
-        todo_id = 'todo%i' % todo_id
+        todo_id = f"todo{todo_id}"
         TODOS[todo_id] = {'task': args['task']}
         return TODOS[todo_id], 201
 
 api.add_resource(TodoList, '/todos')
 api.add_resource(Todo, '/todos/<todo_id>')
 
-@app.route('/')
-def index():
-    return 'Index Page'
+@app.route('/TodoList')
+def list_todos():
+    return TODOS
+
+@app.route('/Todo')
+def list_todo():
+    pass
 
 if __name__ == '__main__':
     app.run(debug=True)
