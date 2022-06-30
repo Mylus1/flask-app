@@ -4,8 +4,6 @@ import requests
 
 app = Flask(__name__)
 api = Api(app)
-response = requests.get('http://127.0.0.1:5000/TodoList')
-todo_json = response.json()
 
 TODOS = {
     'todo1': {'task': 'Build an API'},
@@ -16,6 +14,11 @@ def abort_if_todo_doesnt_exist(todo_id):
     if todo_id not in TODOS:
         abort(404, message=f"Todo {todo_id} doesn't exist")
         
+def abort_if_todo_is_duplicate(task):
+    for todo in TODOS.values():
+        if todo['task'] == task:
+            abort(422, message=f"Todo {'task'} already exists")
+
 parser = reqparse.RequestParser()
 parser.add_argument('task')
 
@@ -41,6 +44,7 @@ class TodoList(Resource):
 
     def post(self):
         args = parser.parse_args()
+        abort_if_todo_is_duplicate(args['task'])
         todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
         todo_id = f"todo{todo_id}"
         TODOS[todo_id] = {'task': args['task']}
@@ -48,14 +52,6 @@ class TodoList(Resource):
 
 api.add_resource(TodoList, '/todos')
 api.add_resource(Todo, '/todos/<todo_id>')
-
-@app.route('/TodoList')
-def list_todos():
-    return TODOS
-
-@app.route('/Todo')
-def list_todo():
-    pass
 
 if __name__ == '__main__':
     app.run(debug=True)
